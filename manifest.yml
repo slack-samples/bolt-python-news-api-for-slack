@@ -1,12 +1,12 @@
 display_information:
   name: News in Slack!
-  description: Slack でニュースを読もう！
+  description: News articles right in Slack!
 features:
   bot_user:
     display_name: NewsBot
     always_online: false
   workflow_steps:
-    - name: 「News in Slack!」のステップ
+    - name: News Please!
       callback_id: news_step
 oauth_config:
   scopes:
