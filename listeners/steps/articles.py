@@ -27,14 +27,10 @@ class Article:
     content: str
 
     def __post_init__(self):
-        self.publishedAt = datetime.fromisoformat(self.publishedAt[:-1]).replace(
-            tzinfo=pytz.timezone("UTC")
-        )
+        self.publishedAt = datetime.fromisoformat(self.publishedAt[:-1]).replace(tzinfo=pytz.timezone("UTC"))
 
 
-def fetch_articles(
-    api_key: str, query: str, num_articles: int = 3
-) -> List[Article]:
+def fetch_articles(api_key: str, query: str, num_articles: int = 3) -> List[Article]:
     params = {
         "apiKey": api_key,
         "q": query,
@@ -42,11 +38,7 @@ def fetch_articles(
         "pageSize": num_articles,
         "sortBy": "publishedAt",
     }
-    url = (
-        "https://newsapi.org/v2/everything"
-        if query
-        else "https://newsapi.org/v2/top-headlines"
-    )
+    url = "https://newsapi.org/v2/everything" if query else "https://newsapi.org/v2/top-headlines"
 
     if query:
         # For more complex queries, see the Advanced Search options here: https://newsapi.org/docs/endpoints/everything
@@ -72,7 +64,6 @@ def format_article(article: Article) -> List[dict]:
                 {
                     "type": "mrkdwn",
                     "text": f"⏱ {article.publishedAt.strftime('%Y-%m-%d %H:%M:%S')}",
-
                 }
             ],
         },

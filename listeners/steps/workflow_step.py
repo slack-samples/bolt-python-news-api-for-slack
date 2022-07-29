@@ -1,12 +1,13 @@
 import logging
-from typing import Optional, Union, List
+import os
+from typing import Optional, Union
 
-from slack_bolt import Ack, App
-from slack_bolt.workflows.step import WorkflowStep, Configure, Update, Complete, Fail
+from slack_bolt import Ack
+from slack_bolt.workflows.step import Configure, Update, Complete, Fail
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackClientError
 
-from articles import fetch_articles, format_article
+from .articles import fetch_articles, format_article
 
 # Keys
 input_channel_ids = "channel_ids"
@@ -14,6 +15,7 @@ input_query = "query"
 input_num_articles = "num_articles"
 
 logger = logging.getLogger(__name__)
+news_api_key = os.environ["NEWS_API_KEY"]
 
 
 def edit(ack: Ack, step: dict, configure: Configure):
@@ -130,63 +132,50 @@ def save(ack: Ack, view: dict, update: Update):
     ack()
 
 
-def enable_workflow_step(app: App, news_api_key: str):
-    def execute(step: dict, client: WebClient, complete: Complete, fail: Fail):
-        inputs = step.get("inputs", {})
-        try:
-            query = inputs.get(input_query).get("value")
-            num_articles = int(inputs.get(input_num_articles).get("value"))
-            channels = inputs.get(input_channel_ids).get("value").split(",")
+def execute(step: dict, client: WebClient, complete: Complete, fail: Fail):
+    inputs = step.get("inputs", {})
+    try:
+        query = inputs.get(input_query).get("value")
+        num_articles = int(inputs.get(input_num_articles).get("value"))
+        channels = inputs.get(input_channel_ids).get("value").split(",")
 
-            # Calls third-party News API and retrieves articles using inputs from above
-            articles = fetch_articles(news_api_key, query, num_articles)
-        except Exception as err:
-            fail(error={"message": f"Failed to fetch news articles ({err})"})
-            return
+        # Calls third-party News API and retrieves articles using inputs from above
+        articles = fetch_articles(news_api_key, query, num_articles)
+    except Exception as err:
+        fail(error={"message": f"Failed to fetch news articles ({err})"})
+        return
 
-        outputs = {}
-        try:
-            if articles:
-                for article in articles:
-                    blocks = format_article(article)
-                    for channel in channels:
-                        # Send a message to all the specified channels
-                        response = client.chat_postMessage(
-                            channel=channel,
-                            blocks=blocks,
-                            unfurl_links=False,
-                            unfurl_media=False,
-                            text=article.title,
-                        )
-                        outputs[channel] = response.get("message").get("ts")
-            else:
-                # Notify the user that no articles were found.
+    outputs = {}
+    try:
+        if articles:
+            for article in articles:
+                blocks = format_article(article)
                 for channel in channels:
+                    # Send a message to all the specified channels
                     response = client.chat_postMessage(
                         channel=channel,
-                        text=f"No articles matched your query: {query}.",
+                        blocks=blocks,
+                        unfurl_links=False,
+                        unfurl_media=False,
+                        text=article.title,
                     )
                     outputs[channel] = response.get("message").get("ts")
+        else:
+            # Notify the user that no articles were found.
+            for channel in channels:
+                response = client.chat_postMessage(
+                    channel=channel,
+                    text=f"No articles matched your query: {query}.",
+                )
+                outputs[channel] = response.get("message").get("ts")
 
-        except SlackClientError as err:
-            fail(error={"message": f"Notification failed ({err})"})
+    except SlackClientError as err:
+        fail(error={"message": f"Notification failed ({err})"})
 
-        complete(outputs=outputs)
-
-    # Your app will answer with the following callback functions when presented with workflow events
-    app.step(
-        WorkflowStep(
-            callback_id="news_step",
-            edit=edit,
-            save=save,
-            execute=execute,
-        )
-    )
+    complete(outputs=outputs)
 
 
-def _extract(
-    state_values: dict, key: str, attribute: str
-) -> Optional[Union[str, list]]:
+def _extract(state_values: dict, key: str, attribute: str) -> Optional[Union[str, list]]:
     v = state_values[key].get("_", {})
     if v is not None and v.get(attribute) is not None:
         attribute_value = v.get(attribute)
