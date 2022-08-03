@@ -7,7 +7,7 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackClientError
 
 # Keys
-from utils.article_utils import NewsFetcher
+from utils.news_fetcher import NewsFetcher
 
 input_channel_ids = "channel_ids"
 input_query = "query"

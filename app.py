@@ -5,7 +5,7 @@ from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 from listeners import register_listeners
-from utils.article_utils import NewsFetcher
+from utils.news_fetcher import NewsFetcher
 
 # Initialization
 app = App(token=os.environ.get("SLACK_BOT_TOKEN"))

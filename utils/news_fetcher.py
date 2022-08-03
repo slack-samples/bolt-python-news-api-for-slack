@@ -3,13 +3,13 @@ from typing import List
 import requests
 import logging
 
-from listeners.steps.articles import Article
+from utils.articles import Article
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class NewsFetcher:
-    def __init__(self, news_api_key):
+    def __init__(self, news_api_key: str):
         self.api_key = news_api_key
 
     def fetch_articles(self, query: str, num_articles: int = 3) -> List[Article]:
