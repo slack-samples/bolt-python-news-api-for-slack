@@ -1,12 +1,14 @@
 import logging
 from typing import Optional, Union
 
-from slack_bolt import Ack
+from slack_bolt import Ack, App
 from slack_bolt.workflows.step import Configure, Update, Complete, Fail, WorkflowStep
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackClientError
 
 # Keys
+from utils.article_utils import NewsFetcher
+
 input_channel_ids = "channel_ids"
 input_query = "query"
 input_num_articles = "num_articles"
@@ -127,7 +129,7 @@ def save(ack: Ack, view: dict, update: Update):
     ack()
 
 
-def enable_workflow_step(app, news_fetcher):
+def enable_workflow_step(app: App, news_fetcher: NewsFetcher):
     def execute(step: dict, client: WebClient, complete: Complete, fail: Fail):
         inputs = step.get("inputs", {})
         try:
