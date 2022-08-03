@@ -1,8 +1,8 @@
 from slack_bolt import App
 
-from .workflow_step import edit, save, execute
+from listeners.steps import workflow_step
 
 
-def register(app: App):
+def register(app: App, news_fetcher):
     # Your app will answer with the following callback functions when presented with workflow events
-    app.step("news_step", edit, save, execute)
+    workflow_step.enable_workflow_step(app, news_fetcher)
