@@ -13,7 +13,7 @@ input_channel_ids = "channel_ids"
 input_query = "query"
 input_num_articles = "num_articles"
 
-logger = logging.getLogger(__name__)
+default_logger = logging.getLogger(__name__)
 
 
 def edit(ack: Ack, step: dict, configure: Configure):

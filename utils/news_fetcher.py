@@ -1,16 +1,17 @@
-from typing import List
+from typing import List, Optional
 
 import requests
 import logging
 
 from utils.articles import Article
 
-logger = logging.getLogger(__name__)
+default_logger = logging.getLogger(__name__)
 
 
 class NewsFetcher:
-    def __init__(self, news_api_key: str):
+    def __init__(self, news_api_key: str, logger: Optional[logging.Logger] = None):
         self.api_key = news_api_key
+        self.logger = logger or default_logger
 
     def fetch_articles(self, query: str, num_articles: int = 3) -> List[Article]:
         params = {
@@ -31,7 +32,7 @@ class NewsFetcher:
         try:
             response = requests.get(url=url, params=params)
         except Exception as err:
-            logger.error(err)
+            self.logger.error(err)
         response_body = response.json()
 
         return [Article(**article) for article in response_body.get("articles")]
