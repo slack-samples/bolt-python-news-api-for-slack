@@ -13,11 +13,9 @@ input_channel_ids = "channel_ids"
 input_query = "query"
 input_num_articles = "num_articles"
 
-default_logger = logging.getLogger(__name__)
 
-
-def edit(ack: Ack, step: dict, configure: Configure):
-    default_logger.info("Editing workflow step")
+def edit(ack: Ack, step: dict, configure: Configure, logger: logging.Logger):
+    logger.info("Editing workflow step")
     ack()
     inputs = step.get("inputs")
     blocks = []
@@ -103,8 +101,8 @@ def edit(ack: Ack, step: dict, configure: Configure):
     configure(blocks=blocks)
 
 
-def save(ack: Ack, view: dict, update: Update):
-    default_logger.info("Saving workflow step")
+def save(ack: Ack, view: dict, update: Update, logger: logging.Logger):
+    logger.info("Saving workflow step")
     state_values = view["state"]["values"]
     # Extracts the values found within the `state` parameter
     channels = _extract(state_values, input_channel_ids, "selected_channels")
@@ -132,8 +130,8 @@ def save(ack: Ack, view: dict, update: Update):
 
 
 def enable_workflow_step(app: App, news_fetcher: NewsFetcher):
-    def execute(step: dict, client: WebClient, complete: Complete, fail: Fail):
-        default_logger.info("Executing workflow step")
+    def execute(step: dict, client: WebClient, complete: Complete, fail: Fail, logger: logging.Logger):
+        logger.info("Executing workflow step")
         inputs = step.get("inputs", {})
         try:
             query = inputs.get(input_query).get("value")
