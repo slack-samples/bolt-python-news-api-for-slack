@@ -1,22 +1,21 @@
 import logging
-from typing import Optional, Union, List
+from typing import Optional, Union
 
 from slack_bolt import Ack, App
-from slack_bolt.workflows.step import WorkflowStep, Configure, Update, Complete, Fail
+from slack_bolt.workflows.step import Configure, Update, Complete, Fail, WorkflowStep
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackClientError
 
-from articles import fetch_articles, format_article
-
 # Keys
+from utils.news_fetcher import NewsFetcher
+
 input_channel_ids = "channel_ids"
 input_query = "query"
 input_num_articles = "num_articles"
 
-logger = logging.getLogger(__name__)
 
-
-def edit(ack: Ack, step: dict, configure: Configure):
+def edit(ack: Ack, step: dict, configure: Configure, logger: logging.Logger):
+    logger.info("Editing workflow step")
     ack()
     inputs = step.get("inputs")
     blocks = []
@@ -102,9 +101,9 @@ def edit(ack: Ack, step: dict, configure: Configure):
     configure(blocks=blocks)
 
 
-def save(ack: Ack, view: dict, update: Update):
+def save(ack: Ack, view: dict, update: Update, logger: logging.Logger):
+    logger.info("Saving workflow step")
     state_values = view["state"]["values"]
-
     # Extracts the values found within the `state` parameter
     channels = _extract(state_values, input_channel_ids, "selected_channels")
     query = _extract(state_values, input_query, "value")
@@ -130,8 +129,9 @@ def save(ack: Ack, view: dict, update: Update):
     ack()
 
 
-def enable_workflow_step(app: App, news_api_key: str):
-    def execute(step: dict, client: WebClient, complete: Complete, fail: Fail):
+def enable_workflow_step(app: App, news_fetcher: NewsFetcher):
+    def execute(step: dict, client: WebClient, complete: Complete, fail: Fail, logger: logging.Logger):
+        logger.info("Executing workflow step")
         inputs = step.get("inputs", {})
         try:
             query = inputs.get(input_query).get("value")
@@ -139,7 +139,7 @@ def enable_workflow_step(app: App, news_api_key: str):
             channels = inputs.get(input_channel_ids).get("value").split(",")
 
             # Calls third-party News API and retrieves articles using inputs from above
-            articles = fetch_articles(news_api_key, query, num_articles)
+            articles = news_fetcher.fetch_articles(query, num_articles)
         except Exception as err:
             fail(error={"message": f"Failed to fetch news articles ({err})"})
             return
@@ -148,7 +148,7 @@ def enable_workflow_step(app: App, news_api_key: str):
         try:
             if articles:
                 for article in articles:
-                    blocks = format_article(article)
+                    blocks = news_fetcher.format_article(article)
                     for channel in channels:
                         # Send a message to all the specified channels
                         response = client.chat_postMessage(
@@ -173,7 +173,6 @@ def enable_workflow_step(app: App, news_api_key: str):
 
         complete(outputs=outputs)
 
-    # Your app will answer with the following callback functions when presented with workflow events
     app.step(
         WorkflowStep(
             callback_id="news_step",
@@ -184,9 +183,7 @@ def enable_workflow_step(app: App, news_api_key: str):
     )
 
 
-def _extract(
-    state_values: dict, key: str, attribute: str
-) -> Optional[Union[str, list]]:
+def _extract(state_values: dict, key: str, attribute: str) -> Optional[Union[str, list]]:
     v = state_values[key].get("_", {})
     if v is not None and v.get(attribute) is not None:
         attribute_value = v.get(attribute)
