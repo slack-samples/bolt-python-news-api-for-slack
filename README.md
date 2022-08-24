@@ -51,6 +51,13 @@ pip install -r requirements.txt
 python3 app.py
 ```
 
+#### Linting
+```zsh
+# Run flake8 from root directory for linting
+flake8 *.py && flake8 listeners/
+# Run black from root directory for code formatting
+black .
+```
 
 ## Project Structure
 
@@ -58,9 +65,9 @@ python3 app.py
 
 `manifest.json` is a configuration for Slack apps. With a manifest, you can create an app with a pre-defined configuration, or adjust the configuration of an existing app.
 
-### `app.js`
+### `app.py`
 
-`app.js` is the entry point for the application and is the file you'll run to start the server. This project aims to keep this file as thin as possible, primarily using it as a way to route inbound requests.
+`app.py` is the entry point for the application and is the file you'll run to start the server. This project aims to keep this file as thin as possible, primarily using it as a way to route inbound requests.
 
 ### `/listeners/steps`
 
@@ -68,4 +75,34 @@ Every incoming request is routed to a "listener". Inside this directory, you'll 
 
 ### `/utils`
 
+#### `/utils/articles.py`
+
 Contains class definitions that make the rest of the project code cleaner.
+
+#### `/utils/news_fetcher.py`
+
+Utility class that deals with interactions with the NewsAPI
+
+## App Distribution / OAuth
+
+Only implement OAuth if you plan to distribute your application across multiple workspaces. A separate `app-oauth.py` file can be found with relevant OAuth settings.
+
+When using OAuth, Slack requires a public URL where it can send requests. In this template app, we've used [`ngrok`](https://ngrok.com/download). Checkout [this guide](https://ngrok.com/docs#getting-started-expose) for setting it up.
+
+Start `ngrok` to access the app on an external network and create a redirect URL for OAuth. 
+
+```
+ngrok http 3000
+```
+
+This output should include a forwarding address for `http` and `https` (we'll use `https`). It should look something like the following:
+
+```
+Forwarding   https://3cb89939.ngrok.io -> http://localhost:3000
+```
+
+Navigate to **OAuth & Permissions** in your app configuration and click **Add a Redirect URL**. The redirect URL should be set to your `ngrok` forwarding address with the `slack/oauth_redirect` path appended. For example:
+
+```
+https://3cb89939.ngrok.io/slack/oauth_redirect
+```
