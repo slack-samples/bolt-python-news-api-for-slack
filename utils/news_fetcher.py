@@ -30,6 +30,7 @@ class NewsFetcher:
         else:
             del params["q"]
         try:
+            self.logger.info(f"Fetching articles from NewsAPI {url} query: {params['q']} number of articles: {params['pageSize']}")
             response = requests.get(url=url, params=params)
         except Exception as err:
             self.logger.error(err)
