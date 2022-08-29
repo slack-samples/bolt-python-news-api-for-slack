@@ -170,6 +170,7 @@ def enable_workflow_step(app: App, news_fetcher: NewsFetcher):
 
         except SlackClientError as err:
             fail(error={"message": f"Notification failed ({err})"})
+            return
 
         complete(outputs=outputs)
 
